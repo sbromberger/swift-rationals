@@ -1,12 +1,12 @@
 // swiftlint:disable identifier_name
 struct Rational: Hashable {
-    let num, den, g: Int
+    let numerator, denominator, divisor: Int
     private static func gcd(x: Int, y: Int) -> Int {
         return (y == 0) ? x : gcd(x: y, y: (x % y))
     }
 
     init() {
-        (num, den, g) = (0, 1, 1)
+        (numerator, denominator, divisor) = (0, 1, 1)
     }
 
     init(numerator: Int, denominator: Int) {
@@ -16,17 +16,13 @@ struct Rational: Hashable {
 
         let pg = abs(Rational.gcd(x: numerator, y: denominator))
         let denSign = denominator.signum()
-        num = numerator * denSign / pg
-        den = abs(denominator) / pg
-        g = denSign * pg
+        self.numerator = numerator * denSign / pg
+        self.denominator = abs(denominator) / pg
+        self.divisor = denSign * pg
     }
 
-    init(_ numerator: Int, _ denominator: Int = 1) {
+    init(_ numerator: Int, _ denominator:Int) {
         self.init(numerator: numerator, denominator: denominator)
-    }
-
-    init(_ val: Int) {
-        self.init(integerLiteral: val)
     }
 
     init(_ v: Double) {
@@ -39,19 +35,23 @@ struct Rational: Hashable {
         self.init(numerator: Int(n), denominator: d)
     }
 
-    init(_ s: String) {
+    init?(_ s: String) {
         let f = s.split(separator: "/", maxSplits: 2, omittingEmptySubsequences: true)
 
-        precondition(f.count == 2, "invalid string")
+        if (f.count != 2) {
+            return nil
+        }
+
         let n: Int? = Int(f[0])
         let d: Int? = Int(f[1])
-
-        precondition(n != nil && d != nil)
-        self.init(numerator: n!, denominator: d!)
+        if (n != nil && d != nil) {
+            self.init(numerator: n!, denominator: d!)
+        }
+        return nil
     }
 
-    func inverse() -> Rational? {
-        return Rational(den, num)
+    var inverse: Rational {
+        return Rational(denominator, numerator)
     }
 }
 
@@ -69,11 +69,11 @@ extension Rational: ExpressibleByFloatLiteral {
 
 extension Rational: Comparable {
     static func == (lhs: Rational, rhs: Rational) -> Bool {
-        return lhs.num == rhs.num && lhs.den == rhs.den
+        return lhs.numerator == rhs.numerator && lhs.denominator == rhs.denominator
     }
 
     static func < (lhs: Rational, rhs: Rational) -> Bool {
-        return lhs.num * rhs.den < lhs.den * rhs.num
+        return lhs.numerator * rhs.denominator < lhs.denominator * rhs.numerator
     }
 }
 
@@ -83,19 +83,19 @@ extension Rational: SignedNumeric {
     }
 
     static func + (lhs: Rational, rhs: Rational) -> Rational {
-        return Rational((lhs.num * rhs.den + rhs.num * lhs.den), lhs.den * rhs.den)
+        return Rational((lhs.numerator * rhs.denominator + rhs.numerator * lhs.denominator), lhs.denominator * rhs.denominator)
     }
 
     static func * (lhs: Rational, rhs: Rational) -> Rational {
-        return Rational(lhs.num * rhs.num, lhs.den * rhs.den)
+        return Rational(lhs.numerator * rhs.numerator, lhs.denominator * rhs.denominator)
     }
 
     static func / (lhs: Rational, rhs: Rational) -> Rational {
-        return Rational(lhs.num * rhs.den, lhs.den * rhs.num)
+        return Rational(lhs.numerator * rhs.denominator, lhs.denominator * rhs.numerator)
     }
 
     var magnitude: Rational {
-        return Rational(abs(num), den)
+        return Rational(abs(numerator), denominator)
     }
 
     init?<T>(exactly source: T) where T: BinaryInteger {
@@ -103,15 +103,15 @@ extension Rational: SignedNumeric {
     }
 
     static func *= (lhs: inout Rational, rhs: Rational) {
-        lhs = Rational(lhs.num * rhs.num, lhs.den * rhs.den)
+        lhs = Rational(lhs.numerator * rhs.numerator, lhs.denominator * rhs.denominator)
     }
 
     static func += (lhs: inout Rational, rhs: Rational) {
-        lhs = Rational((lhs.num * rhs.den + rhs.num * lhs.den), lhs.den * rhs.den)
+        lhs = Rational((lhs.numerator * rhs.denominator + rhs.numerator * lhs.denominator), lhs.denominator * rhs.denominator)
     }
 
     static prefix func - (r: Rational) -> Rational {
-        return Rational(-(r.num), r.den)
+        return Rational(-(r.numerator), r.denominator)
     }
 
     mutating func negate() {
@@ -135,54 +135,65 @@ extension Rational: Strideable {
 
 extension Rational: CustomStringConvertible {
     var description: String {
-        return "\(num)//\(den)"
+        return "\(numerator)//\(denominator)"
     }
 }
 
 extension Double {
     init(_ r: Rational) {
-        self = Double(r.num) / Double(r.den)
+        self = Double(r.numerator) / Double(r.denominator)
     }
 }
 
-// let b = Rational(-10, -20)
-// print(b)
-// let c = Rational(numerator: 4, denominator: 5)
-// print(c)
-//
-// let ba = b * c
-// print(ba)
-//
-// let d = Rational()
-// print(d)
-//
-// let s = Rational("9//8")
-// print("s = \(s)")
-//
-//// let e = Rational(343, 0)
-//
-// let f = Rational()
-// print("f = \(f)")
-//
-// var zzzzz = 2832.966
-// let g = Rational(1, 5)
-// print("g = \(g)")
-//
-// let h = Double(g)
-// print("h = \(h)")
-//
-// let j = Rational(0.0248)
-// print("j = \(j)")
-//
-// print(g > j)
-//
-// let k = g * 1
-// print(k)
-//
-// let l: [Rational: String] = [j: "OK", g: "O2"]
-// print(l)
-//
-// let m = Rational(0)
-//
+ let b = Rational(-10, -20)
+ print(b)
+ let c = Rational(numerator: 4, denominator: 5)
+ print(c)
+
+ let ba = b * c
+ print(ba)
+
+ let d = Rational()
+ print(d)
+
+ let s = Rational("9//8")
+ print("s = \(s)")
+
+// let e = Rational(343, 0)
+
+ let f = Rational()
+ print("f = \(f)")
+
+ var zzzzz = 2832.966
+ let g = Rational(1, 5)
+ print("g = \(g)")
+
+ let h = Double(g)
+ print("h = \(h)")
+
+ let j = Rational(0.0248)
+ print("j = \(j)")
+
+ print(g > j)
+
+ let k = g * 1
+ print(k)
+
+ let l: [Rational: String] = [j: "OK", g: "O2"]
+ print(l)
+
+ let m = Rational(0)
+
+//let im = m.inverse
+//if im == nil {
+//    print("im is nil")
+//} else {
+//    print("im = \(im)")
+//}
 // let n = k / m
 // print(n)
+
+let p = Rational("3")
+if p == nil {
+    print("p is nil")
+}
